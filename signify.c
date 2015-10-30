@@ -72,7 +72,7 @@ struct sig {
 
 extern char *__progname;
 
-static void
+static void __dead
 usage(const char *error)
 {
 	if (error)
