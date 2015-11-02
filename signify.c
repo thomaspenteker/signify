@@ -724,6 +724,9 @@ main(int argc, char **argv)
 	argc -= optind;
 	argv += optind;
 
+	if (setvbuf(stdout, NULL, _IOLBF, 0) != 0)
+		err(1, "setvbuf");
+
 	switch (verb) {
 	case GENERATE:
 	case SIGN:
