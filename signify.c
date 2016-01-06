@@ -71,7 +71,7 @@ struct sig {
 
 extern char *__progname;
 
-static void
+static void __dead
 usage(const char *error)
 {
 	if (error)
@@ -366,7 +366,7 @@ sign(const char *seckeyfile, const char *msgfile, const char *sigfile,
 	SHA512Update(&ctx, enckey.seckey, sizeof(enckey.seckey));
 	SHA512Final(digest, &ctx);
 	if (memcmp(enckey.checksum, digest, sizeof(enckey.checksum)) != 0)
-	    errx(1, "incorrect passphrase");
+		errx(1, "incorrect passphrase");
 	explicit_bzero(digest, sizeof(digest));
 
 	msg = readmsg(msgfile, &msglen);
@@ -558,9 +558,8 @@ verifychecksum(struct checksum *c, int quiet)
 	} else {
 		errx(1, "can't handle algorithm %s", c->algo);
 	}
-	if (strcmp(c->hash, buf) != 0) {
+	if (strcmp(c->hash, buf) != 0)
 		return 0;
-	}
 	if (!quiet)
 		printf("%s: OK\n", c->file);
 	return 1;
@@ -662,6 +661,8 @@ main(int argc, char **argv)
 		VERIFY
 	} verb = NONE;
 
+	if (pledge("stdio rpath wpath cpath tty", NULL) == -1)
+		err(1, "pledge");
 
 	rounds = 42;
 
@@ -720,6 +721,33 @@ main(int argc, char **argv)
 	}
 	argc -= optind;
 	argv += optind;
+
+	if (setvbuf(stdout, NULL, _IOLBF, 0) != 0)
+		err(1, "setvbuf");
+
+	switch (verb) {
+	case GENERATE:
+	case SIGN:
+		/* keep it all */
+		break;
+	case CHECK:
+		if (pledge("stdio rpath", NULL) == -1)
+			err(1, "pledge");
+		break;
+	case VERIFY:
+		if (embedded && (!msgfile || strcmp(msgfile, "-") != 0)) {
+			if (pledge("stdio rpath wpath cpath", NULL) == -1)
+				err(1, "pledge");
+		} else {
+			if (pledge("stdio rpath", NULL) == -1)
+				err(1, "pledge");
+		}
+		break;
+	default:
+		if (pledge("stdio", NULL) == -1)
+			err(1, "pledge");
+		break;
+	}
 
 #ifndef VERIFYONLY
 	if (verb == CHECK) {
