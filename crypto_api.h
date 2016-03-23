@@ -14,6 +14,11 @@
 typedef int32_t crypto_int32;
 typedef uint32_t crypto_uint32;
 
+int timingsafe_bcmp(const void *b1, const void *b2, size_t n);
+# ifndef HAVE_ARC4RANDOM_BUF
+void arc4random_buf(void *buf, size_t n);
+# endif
+
 #define randombytes(buf, buf_len) arc4random_buf((buf), (buf_len))
 
 #define crypto_hashblocks_sha512_STATEBYTES 64U
