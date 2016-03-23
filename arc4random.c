@@ -76,7 +76,7 @@ _rs_stir(void)
 {
 	u_char rnd[KEYSZ + IVSZ];
 
-	if (RAND_bytes(rnd, sizeof(rnd)) <= 0)
+	if (getentropy(rnd, sizeof(rnd)) <= 0)
 		errx(1, "Couldn't obtain random bytes");
 
 	if (!rs_initialized) {
